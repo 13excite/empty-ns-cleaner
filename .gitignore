@@ -3,6 +3,7 @@
 vendor
 .DS_Store
 .idea
+bin/
 __pycache__
 *.log
 *.pyc
