@@ -1,4 +1,4 @@
-domain: empty.ns.cleaner.com
+domain: cleaner.com
 layout:
 - go.kubebuilder.io/v3
 plugins:
@@ -11,9 +11,9 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: empty.ns.cleaner.com
+  domain: cleaner.com
   group: core
-  kind: Namespace
+  kind: Cleaner
   path: github.com/13excite/empty-ns-cleaner/api/v1
   version: v1
 version: "3"

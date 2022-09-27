@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: 6c412319.empty.ns.cleaner.com
+  resourceName: 6c412319.cleaner.com

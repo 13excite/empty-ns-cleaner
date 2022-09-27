@@ -1,0 +1,6 @@
+apiVersion: core.cleaner.com/v1
+kind: Cleaner
+metadata:
+  name: cleaner-sample
+spec:
+  # TODO(user): Add fields here

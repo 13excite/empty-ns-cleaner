@@ -27,26 +27,26 @@ import (
 	corev1 "github.com/13excite/empty-ns-cleaner/api/v1"
 )
 
-// NamespaceReconciler reconciles a Namespace object
-type NamespaceReconciler struct {
+// CleanerReconciler reconciles a Cleaner object
+type CleanerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=core.empty.ns.cleaner.com,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core.empty.ns.cleaner.com,resources=namespaces/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=core.empty.ns.cleaner.com,resources=namespaces/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core.cleaner.com,resources=cleaners,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core.cleaner.com,resources=cleaners/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=core.cleaner.com,resources=cleaners/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the Namespace object against the actual cluster state, and then
+// the Cleaner object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CleanerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -55,8 +55,8 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CleanerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Namespace{}).
+		For(&corev1.Cleaner{}).
 		Complete(r)
 }

@@ -1,20 +1,20 @@
-# permissions for end users to view namespaces.
+# permissions for end users to view cleaners.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: namespace-viewer-role
+  name: cleaner-viewer-role
 rules:
 - apiGroups:
-  - core.empty.ns.cleaner.com
+  - core.cleaner.com
   resources:
-  - namespaces
+  - cleaners
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - core.empty.ns.cleaner.com
+  - core.cleaner.com
   resources:
-  - namespaces/status
+  - cleaners/status
   verbs:
   - get

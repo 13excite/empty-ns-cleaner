@@ -71,18 +71,18 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "6c412319.empty.ns.cleaner.com",
+		LeaderElectionID:       "6c412319.cleaner.com",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	if err = (&controllers.NamespaceReconciler{
+	if err = (&controllers.CleanerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
+		setupLog.Error(err, "unable to create controller", "controller", "Cleaner")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
