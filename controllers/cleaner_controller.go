@@ -19,10 +19,14 @@ package controllers
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	//	appv1 "k8s.io/api/apps/v1"
+	kcorev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	corev1 "github.com/13excite/empty-ns-cleaner/api/v1"
 )
@@ -30,6 +34,7 @@ import (
 // CleanerReconciler reconciles a Cleaner object
 type CleanerReconciler struct {
 	client.Client
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -46,8 +51,29 @@ type CleanerReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
+
+var globalLog = logf.Log.WithName("global")
+
 func (r *CleanerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	_ = logf.FromContext(ctx)
+
+	opts := zap.Options{}
+	logger := zap.New(zap.UseFlagOptions(&opts))
+
+	logf.SetLogger(logger)
+	globalLog.Info("Printing at INFO level")
+	log := globalLog
+
+	nss := &kcorev1.NamespaceList{}
+
+	r.List(ctx, nss)
+	log.Info("ZZPZZPPZPPZPZPPZPZPPZPZP")
+	log.Info(nss.String())
+
+	for _, k := range nss.Items {
+		log.Info(k.Name)
+
+	}
 
 	// TODO(user): your logic here
 
