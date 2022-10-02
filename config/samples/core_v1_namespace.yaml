@@ -1,6 +1,0 @@
-apiVersion: core.empty.ns.cleaner.com/v1
-kind: Namespace
-metadata:
-  name: namespace-sample
-spec:
-  # TODO(user): Add fields here
