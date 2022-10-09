@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-cleaner-operator
+  labels:
+    application: ns-cleaner-operator

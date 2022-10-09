@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: ns-cleaner
+  namespace: ns-cleaner-operator
   labels:
     application: ns-cleaner-operator
 spec:
