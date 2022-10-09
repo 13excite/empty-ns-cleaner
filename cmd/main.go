@@ -20,14 +20,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	for {
-		// get pods in all the namespaces by omitting namespace
-		// Or specify namespace to get pods in particular namespace
-		pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			panic(err.Error())
-		}
 		ctx := context.Background()
-		fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
 
 		// Examples for error handling:
 		// - Use helper functions e.g. errors.IsNotFound()
@@ -41,6 +34,15 @@ func main() {
 			panic(err.Error())
 		} else {
 			fmt.Printf("Found dnsutils pod in test1 namespace\n")
+		}
+
+		namespaces, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		if err != nil {
+			panic(err.Error())
+		}
+
+		for _, n := range namespaces.Items {
+			log.Print("Found namespace: ", n)
 		}
 
 		time.Sleep(10 * time.Second)
