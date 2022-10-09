@@ -26,6 +26,10 @@ rules:
   - apiGroups: [""]
     resources: [events]
     verbs: [create]
+  # test for pods
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["pods"]
+    verbs: ["get", "list"]
   # ns-cleaner-operator
   - apiGroups: ["*"]
     resources: ["*"]
