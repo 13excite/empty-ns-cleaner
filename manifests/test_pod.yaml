@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ns-cleaner
+  labels:
+    application: ns-cleaner-operator
+spec:
+  serviceAccountName: ns-cleaner-operator
+  containers:
+  - name: nscleaner
+    image: excite13/ns-cleaner:v2
+    imagePullPolicy: IfNotPresent
+  restartPolicy: Always
