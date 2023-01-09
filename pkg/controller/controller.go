@@ -2,9 +2,11 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	types "k8s.io/apimachinery/pkg/types"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -13,12 +15,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func ignoreNotFound(err error) error {
-	if apierrs.IsNotFound(err) {
-		return nil
-	}
-	return err
-}
+const (
+	AddRemoveAnnotationValue = "True"
+	DelRemoveAnnotationValue = "False"
+)
 
 type NSCleaner struct {
 	kclient    *kubernetes.Clientset
@@ -45,7 +45,6 @@ func (c *NSCleaner) DeleteNamespace() {
 }
 
 func (c *NSCleaner) GetNamepsaces() (*v1.NamespaceList, error) {
-
 	nsList, err := c.kclient.CoreV1().Namespaces().List(c.ctx, metav1.ListOptions{})
 	if err != nil {
 		log.Fatal(err)
@@ -54,12 +53,45 @@ func (c *NSCleaner) GetNamepsaces() (*v1.NamespaceList, error) {
 	return nsList, nil
 }
 
-// UpdateLabels updates given namespace
+// Updates given namespace
 // Should use only for updating labels
 // but also can be use for updating any fields
-func (c *NSCleaner) UpdateLabels(obj *v1.Namespace) error {
+func (c *NSCleaner) update(obj *v1.Namespace) error {
 	_, err := c.kclient.CoreV1().Namespaces().Update(c.ctx, obj, metav1.UpdateOptions{})
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddRemoveAnnotation removes deletion mark
+// and add remove-empty-ns-operator/will-removed=False
+func (c *NSCleaner) DeleteRemoveAnnotation(name string) error {
+	return c.patchWillRemovedAnnotations(name, DelRemoveAnnotationValue)
+}
+
+// AddRemoveAnnotation adds deletion
+// mark remove-empty-ns-operator/will-removed=True
+func (c *NSCleaner) AddRemoveAnnotation(name string) error {
+	return c.patchWillRemovedAnnotations(name, AddRemoveAnnotationValue)
+}
+
+// PatchWillRemovedAnnotations patches annotations of namespace
+// and adds remove-empty-ns-operator/will-removed=True
+func (c *NSCleaner) patchWillRemovedAnnotations(name, annotationValue string) error {
+	// default annotation value
+	payload := fmt.Sprintf(
+		`{"metadata": {"annotations": {"remove-empty-ns-operator/will-removed": "%s"}}}`,
+		annotationValue,
+	)
+	// use MergePatchType here, because
+	// the annotations field may not exist
+	_, err := c.kclient.CoreV1().Namespaces().Patch(c.ctx, name, types.MergePatchType,
+		[]byte(payload), metav1.PatchOptions{},
+	)
+	// notFoundErr is ok
+	if ignoreNotFound(err) != nil {
+		log.Print("ERROR IN PATCH")
 		return err
 	}
 	return nil
@@ -93,4 +125,11 @@ func (c *NSCleaner) UpdateLablelsDISABLED() {
 
 	accessor.SetLabels(objLabels)
 	// end labels blocks
+}
+
+func ignoreNotFound(err error) error {
+	if apierrs.IsNotFound(err) {
+		return nil
+	}
+	return err
 }
