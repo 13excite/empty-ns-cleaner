@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/13excite/empty-ns-cleaner/pkg/controller"
+	"github.com/13excite/empty-ns-cleaner/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -14,6 +16,16 @@ import (
 )
 
 func main() {
+
+	// don't mark this NS
+	protectedNS := []string{
+		"default",
+		"kube-public",
+		"kube-system",
+		"local-path-storage",
+		"kube-node-lease",
+	}
+
 	fmt.Println("RUN")
 	clientset, err := newClientSet(true)
 	if err != nil {
@@ -36,13 +48,33 @@ func main() {
 			fmt.Printf("Found dnsutils pod in test1 namespace\n")
 		}
 
-		namespaces, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		kContrl := controller.NewNSCleaner(ctx, clientset)
+
+		namespaces, err := kContrl.GetNamepsaces()
 		if err != nil {
 			panic(err.Error())
 		}
 
 		for _, n := range namespaces.Items {
-			log.Print("Found namespace: ", n)
+			d := fmt.Sprintf("Found NS. Name: %s. Created: %v", n.Name, n.CreationTimestamp)
+
+			if utils.IsProtectedNs(protectedNS, n.Name) {
+				fmt.Printf("NS %s is prodtected. Skiping....\n", n.Name)
+				continue
+			}
+
+			// working with labels
+			// update labels
+			if n.ObjectMeta.Annotations["remove-empty-ns-operator/will-removed"] != "True" {
+				err := kContrl.AddRemoveAnnotation(n.Name)
+				if err != nil {
+					log.Print(err)
+				}
+			} else {
+				fmt.Printf("NS %s already marked as deleted\n", n.Name)
+			}
+
+			log.Print(d)
 		}
 
 		time.Sleep(10 * time.Second)
