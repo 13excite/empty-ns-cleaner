@@ -42,7 +42,7 @@ func TestIsProtectedNs(t *testing.T) {
 	}
 }
 
-func TestContains(t *testing.T) {
+func TestContainsVerb(t *testing.T) {
 	testData := []struct {
 		name  string
 		input []string
@@ -64,7 +64,7 @@ func TestContains(t *testing.T) {
 	}
 
 	for _, tc := range testData {
-		got := Contains(tc.input, tc.exist)
+		got := ContainsVerb(tc.input, tc.exist)
 		require.Equal(t, tc.want, got, tc.name)
 	}
 
