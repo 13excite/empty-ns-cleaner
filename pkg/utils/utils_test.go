@@ -40,5 +40,32 @@ func TestIsProtectedNs(t *testing.T) {
 		got := IsProtectedNs(tc.potectedNS, tc.inputNS)
 		require.Equal(t, tc.want, got, tc.name)
 	}
+}
+
+func TestContains(t *testing.T) {
+	testData := []struct {
+		name  string
+		input []string
+		exist string
+		want  bool
+	}{
+		{
+			name:  "String exists",
+			input: []string{"create", "delete", "deletecollection", "get", "list"},
+			exist: "get",
+			want:  true,
+		},
+		{
+			name:  "String doesn't exist",
+			input: []string{"create", "delete", "deletecollection", "watch", "list"},
+			exist: "get",
+			want:  false,
+		},
+	}
+
+	for _, tc := range testData {
+		got := Contains(tc.input, tc.exist)
+		require.Equal(t, tc.want, got, tc.name)
+	}
 
 }
