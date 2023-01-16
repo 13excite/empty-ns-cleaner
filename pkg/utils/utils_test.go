@@ -35,13 +35,13 @@ func TestIsContains(t *testing.T) {
 			want:  false,
 		},
 		{
-			name:  "String exists",
+			name:  "Verb exists",
 			input: []string{"create", "delete", "deletecollection", "get", "list"},
 			exist: "get",
 			want:  true,
 		},
 		{
-			name:  "String doesn't exist",
+			name:  "Verb doesn't exist",
 			input: []string{"create", "delete", "deletecollection", "list", "watch"},
 			exist: "get",
 			want:  false,
