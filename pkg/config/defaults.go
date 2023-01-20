@@ -29,8 +29,13 @@ func (c *Config) Defaults() {
 			APIGroup: "",
 		},
 		{
-			NameMask: "default-token-",
+			NameMask: `default-token-\w+$`,
 			Kind:     "Secret",
+			APIGroup: "",
+		},
+		{
+			NameMask: `default$`,
+			Kind:     "ServiceAccount",
 			APIGroup: "",
 		},
 	}
