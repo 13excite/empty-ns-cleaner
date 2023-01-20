@@ -34,7 +34,7 @@ func (c *Config) Defaults() {
 			APIGroup: "",
 		},
 		{
-			NameMask: `default$`,
+			NameMask: `^default$`,
 			Kind:     "ServiceAccount",
 			APIGroup: "",
 		},
