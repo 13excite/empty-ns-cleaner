@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/13excite/empty-ns-cleaner/pkg/config"
 	"github.com/13excite/empty-ns-cleaner/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,40 +27,39 @@ const (
 )
 
 type NSCleaner struct {
+	config *config.Config
+
 	kClient         *kubernetes.Clientset
 	discoveryClient *discovery.DiscoveryClient
 	dynamicClient   *dynamic.DynamicClient
 	nsInformer      cache.SharedIndexInformer // should i use cache for NS ?????
-	dryRun          bool
-	ctx             context.Context
-	stopCh          <-chan struct{}
+
+	dryRun bool
+	ctx    context.Context
+	stopCh <-chan struct{}
 }
 
 // TODO: pass args via config struct
-func NewNSCleaner(ctx context.Context, kclient *kubernetes.Clientset,
+func NewNSCleaner(ctx context.Context, conf *config.Config,
+	kclient *kubernetes.Clientset,
 	discoveryClient *discovery.DiscoveryClient,
 	dynamicClient *dynamic.DynamicClient,
 ) *NSCleaner {
 	return &NSCleaner{
-		ctx:             ctx,
 		kClient:         kclient,
 		discoveryClient: discoveryClient,
 		dynamicClient:   dynamicClient,
+		ctx:             ctx,
+		config:          conf,
 	}
 }
-
-// type groupResource struct {
-// 	APIGroup        string
-// 	APIGroupVersion string
-// 	APIResource     metav1.APIResource
-// }
 
 func (c *NSCleaner) GetApiRecources() []schema.GroupVersionResource {
 	// get resources list
 	lists, err := c.discoveryClient.ServerPreferredResources()
 	if err != nil {
 		// TODO: log or return
-		log.Println(err)
+		log.Printf(err.Error())
 	}
 	// result recources
 	resources := []schema.GroupVersionResource{}
@@ -101,28 +101,7 @@ func (c *NSCleaner) GetApiRecources() []schema.GroupVersionResource {
 }
 
 func (c *NSCleaner) Run(ctx context.Context) {
-	protectedNS := []string{
-		"default",
-		"kube-public",
-		"kube-system",
-		"local-path-storage",
-		"kube-node-lease",
-	}
 	for {
-
-		// Examples for error handling:
-		// - Use helper functions e.g. errors.IsNotFound()
-		// - And/or cast to StatusError and use its properties like e.g. ErrStatus.Message
-		// _, err = clientset.CoreV1().Pods("test1").Get(ctx, "dnsutils", metav1.GetOptions{})
-		// if errors.IsNotFound(err) {
-		// 	fmt.Printf("Pod dnsutils not found in test1 namespace\n")
-		// } else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		// 	fmt.Printf("Error getting pod %v\n", statusError.ErrStatus.Message)
-		// } else if err != nil {
-		// 	panic(err.Error())
-		// } else {
-		// 	fmt.Printf("Found dnsutils pod in test1 namespace\n")
-		// }
 
 		namespaces, err := c.GetNamepsaces()
 		gvRecouceList := c.GetApiRecources()
@@ -134,32 +113,21 @@ func (c *NSCleaner) Run(ctx context.Context) {
 		for _, n := range namespaces.Items {
 			d := fmt.Sprintf("Found NS. Name: %s. Created: %v", n.Name, n.CreationTimestamp)
 
-			if utils.IsContains(protectedNS, n.Name) {
-				fmt.Printf("NS %s is prodtected. Skiping....\n", n.Name)
+			if utils.IsContains(c.config.ProtectedNS, n.Name) {
+				if c.config.DebugMode {
+					log.Printf("NS %s is prodtected. Skiping....\n", n.Name)
+				}
 				continue
 			}
 
-		GVR_LOOP:
-			for _, gvr := range gvRecouceList {
-				objUnstruct, err := c.dynamicClient.Resource(gvr).Namespace(n.Name).List(ctx, metav1.ListOptions{})
-				if err != nil {
-					//log.Print("GVR: ", gvr)
-					if ignoreNotFound(err) != nil {
-						log.Print("ERRRORRRR!!!!!! ", gvr)
-						continue GVR_LOOP
-					}
-					continue GVR_LOOP
-				}
-				for _, obj := range objUnstruct.Items {
-					fmt.Println("NAMESPACES: ", n.Name, "GROUP-RESOURCE", gvr.Group, gvr.Resource)
-					fmt.Printf(
-						"Name: %s KIND: %s \n",
-						obj.Object["metadata"].(map[string]interface{})["name"], obj.Object["kind"],
-					)
-				}
-
+			// DEBUG PRINT
+			if c.isEmpty(n, gvRecouceList) {
+				log.Printf("NS IS EMPTY: %s", n.Name)
+			} else {
+				log.Printf("NS IS NOT EMPTY: %s", n.Name)
 			}
-
+			// TODO: mark only empty namespaces
+			// TODO: unmark annotations
 			// working with labels
 			// update labels
 			if n.ObjectMeta.Annotations["remove-empty-ns-operator/will-removed"] != "True" {
@@ -173,10 +141,37 @@ func (c *NSCleaner) Run(ctx context.Context) {
 
 			log.Print(d)
 		}
-
-		time.Sleep(10 * time.Second)
+		time.Sleep(time.Duration(c.config.RunEveeryMins) * time.Minute)
 	}
+}
 
+func (c *NSCleaner) isEmpty(ns v1.Namespace, gvrList []schema.GroupVersionResource) bool {
+GVR_LOOP:
+	for _, gvr := range gvrList {
+		objUnstruct, err := c.dynamicClient.Resource(gvr).Namespace(ns.Name).List(c.ctx, metav1.ListOptions{})
+		if err != nil {
+			if ignoreNotFound(err) != nil {
+				log.Printf("ERRRORRRR!!!!!! %v \n", gvr)
+				continue GVR_LOOP
+			}
+			continue GVR_LOOP
+		}
+	OBJECT_LOOP:
+		for _, obj := range objUnstruct.Items {
+			// TODO: supporting ignored resources!!!!!!!!!
+			if isIgnoredResouce(obj, gvr.Group, c.config.IgnoredResouces, c.config.DebugMode) {
+				continue OBJECT_LOOP
+			}
+			if c.config.DebugMode {
+				log.Printf(
+					"Name: %s KIND: %s is exist \n",
+					obj.Object["metadata"].(map[string]interface{})["name"], obj.Object["kind"],
+				)
+			}
+			return false
+		}
+	}
+	return true
 }
 
 func (c *NSCleaner) DeleteNamespace() {
@@ -234,10 +229,6 @@ func (c *NSCleaner) patchWillRemovedAnnotations(name, annotationValue string) er
 		return err
 	}
 	return nil
-}
-
-func (c *NSCleaner) isEmpty() {
-	//dynamic.NewForConfigAndClient()
 }
 
 // set as Public for testing
