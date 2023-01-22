@@ -19,7 +19,7 @@ func isIgnoredResouce(obj unstructured.Unstructured, APIGroup string,
 		// if regexp match was failed,
 		// write log and return false
 		if err != nil {
-			log.Printf("couldn't match string with error: %v", err)
+			log.Printf("couldn't match string with error: %v\n", err)
 			return false
 		}
 		// if full match between a config and resource,
