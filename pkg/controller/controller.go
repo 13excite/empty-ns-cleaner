@@ -15,15 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
-	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	types "k8s.io/apimachinery/pkg/types"
-)
-
-const (
-	AddRemoveAnnotationValue = "True"
-	DelRemoveAnnotationValue = "False"
 )
 
 type NSCleaner struct {
@@ -143,91 +135,6 @@ func (c *NSCleaner) Run(ctx context.Context) {
 		}
 		time.Sleep(time.Duration(c.config.RunEveeryMins) * time.Minute)
 	}
-}
-
-func (c *NSCleaner) isEmpty(ns v1.Namespace, gvrList []schema.GroupVersionResource) bool {
-GVR_LOOP:
-	for _, gvr := range gvrList {
-		objUnstruct, err := c.dynamicClient.Resource(gvr).Namespace(ns.Name).List(c.ctx, metav1.ListOptions{})
-		if err != nil {
-			if ignoreNotFound(err) != nil {
-				log.Printf("ERRRORRRR!!!!!! %v \n", gvr)
-				continue GVR_LOOP
-			}
-			continue GVR_LOOP
-		}
-	OBJECT_LOOP:
-		for _, obj := range objUnstruct.Items {
-			if isIgnoredResouce(obj, gvr.Group, c.config.IgnoredResouces, c.config.DebugMode) {
-				continue OBJECT_LOOP
-			}
-			if c.config.DebugMode {
-				log.Printf(
-					"Name: %s KIND: %s is exist \n",
-					obj.Object["metadata"].(map[string]interface{})["name"], obj.Object["kind"],
-				)
-			}
-			return false
-		}
-	}
-	return true
-}
-
-func (c *NSCleaner) DeleteNamespace() {
-
-}
-
-func (c *NSCleaner) GetNamepsaces() (*v1.NamespaceList, error) {
-	nsList, err := c.clientSet.CoreV1().Namespaces().List(c.ctx, metav1.ListOptions{})
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-	return nsList, nil
-}
-
-// Updates given namespace
-// Should use only for updating labels
-// but also can be use for updating any fields
-func (c *NSCleaner) update(obj *v1.Namespace) error {
-	_, err := c.clientSet.CoreV1().Namespaces().Update(c.ctx, obj, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// AddRemoveAnnotation removes deletion mark
-// and add remove-empty-ns-operator/will-removed=False
-func (c *NSCleaner) DeleteRemoveAnnotation(name string) error {
-	return c.patchWillRemovedAnnotations(name, DelRemoveAnnotationValue)
-}
-
-// AddRemoveAnnotation adds deletion
-// mark remove-empty-ns-operator/will-removed=True
-func (c *NSCleaner) AddRemoveAnnotation(name string) error {
-	return c.patchWillRemovedAnnotations(name, AddRemoveAnnotationValue)
-}
-
-// PatchWillRemovedAnnotations patches annotations of namespace
-// and adds remove-empty-ns-operator/will-removed=${annotationValue}
-func (c *NSCleaner) patchWillRemovedAnnotations(name, annotationValue string) error {
-	// default annotation value
-	payload := fmt.Sprintf(
-		`{"metadata": {"annotations": {"remove-empty-ns-operator/will-removed": "%s"}}}`,
-		annotationValue,
-	)
-	// use MergePatchType here, because
-	// the annotations field may not exist
-	_, err := c.clientSet.CoreV1().Namespaces().Patch(c.ctx, name, types.MergePatchType,
-		[]byte(payload), metav1.PatchOptions{},
-	)
-	// notFoundErr is ok
-	if ignoreNotFound(err) != nil {
-		log.Print("ERROR IN PATCH")
-		return err
-	}
-	return nil
 }
 
 // set as Public for testing
