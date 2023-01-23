@@ -15,13 +15,13 @@ const (
 
 // AddRemoveAnnotation removes deletion mark
 // and add remove-empty-ns-operator/will-removed=False
-func (c *NSCleaner) DeleteRemoveAnnotation(name string) error {
+func (c *NSCleaner) DeleteWillRemoveAnnotation(name string) error {
 	return c.patchWillRemovedAnnotations(name, DelRemoveAnnotationValue)
 }
 
 // AddRemoveAnnotation adds deletion
 // mark remove-empty-ns-operator/will-removed=True
-func (c *NSCleaner) AddRemoveAnnotation(name string) error {
+func (c *NSCleaner) AddWillRemoveAnnotation(name string) error {
 	return c.patchWillRemovedAnnotations(name, AddRemoveAnnotationValue)
 }
 
@@ -40,7 +40,7 @@ func (c *NSCleaner) patchWillRemovedAnnotations(name, annotationValue string) er
 	)
 	// notFoundErr is ok
 	if ignoreNotFound(err) != nil {
-		log.Print("ERROR IN PATCH")
+		log.Printf("unexpected error in running patch annotations\n")
 		return err
 	}
 	return nil

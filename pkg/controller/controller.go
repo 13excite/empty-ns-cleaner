@@ -123,7 +123,7 @@ func (c *NSCleaner) Run(ctx context.Context) {
 			// working with labels
 			// update labels
 			if n.ObjectMeta.Annotations["remove-empty-ns-operator/will-removed"] != "True" {
-				err := c.AddRemoveAnnotation(n.Name)
+				err := c.AddWillRemoveAnnotation(n.Name)
 				if err != nil {
 					log.Print(err)
 				}
