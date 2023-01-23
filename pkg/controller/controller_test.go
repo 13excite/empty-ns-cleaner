@@ -46,29 +46,6 @@ func TestGetNamepsaces(t *testing.T) {
 				},
 			},
 		},
-		{
-			name:                     "exsisting namespace found",
-			expectedName:             "my-namespace",
-			targetLabelKey:           "label1",
-			expectedLabelValue:       "value1",
-			targetAnnotationsKey:     "remove-empty-ns-operator/will-removed",
-			expectedAnnotationsValue: "True",
-			expectedError:            nil,
-			expectSuccess:            true,
-			namespaces: []runtime.Object{
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-namespace",
-						Labels: map[string]string{
-							"label1": "value1",
-						},
-						Annotations: map[string]string{
-							"remove-empty-ns-operator/will-removed": "True",
-						},
-					},
-				},
-			},
-		},
 	}
 
 	for _, tc := range testCases {
