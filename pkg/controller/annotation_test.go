@@ -49,12 +49,11 @@ func TestAddWillRemoveAnnotation(t *testing.T) {
 		require.Equal(t, tc.expectedError, err, tc.name)
 
 		got, err := ctrl.GetNamepsaces()
-		nsList := got.Items
 
 		require.Equal(t, tc.expectedError, err, tc.name+". Getting namespaces")
 
-		require.Equal(t, nsList[0].ObjectMeta.Annotations[tc.targetAnnotationsKey],
-			tc.expectedAnnotationsValue, tc.name,
+		require.Equal(t, tc.expectedAnnotationsValue,
+			got.Items[0].ObjectMeta.Annotations[tc.targetAnnotationsKey], tc.name,
 		)
 
 	}
@@ -71,7 +70,7 @@ func TestDeleteRemoveAnnotation(t *testing.T) {
 	}{
 		{
 			name:                     "deleting will-removed annotations for existing ns",
-			nsName:                   "my-namespace",
+			nsName:                   "my-namespace1",
 			targetAnnotationsKey:     "remove-empty-ns-operator/will-removed",
 			expectedAnnotationsValue: "False",
 			expectedError:            nil,
@@ -101,12 +100,11 @@ func TestDeleteRemoveAnnotation(t *testing.T) {
 		require.Equal(t, tc.expectedError, err, tc.name)
 
 		got, err := ctrl.GetNamepsaces()
-		nsList := got.Items
 
 		require.Equal(t, tc.expectedError, err, tc.name+". Getting namespaces")
 
-		require.Equal(t, nsList[0].ObjectMeta.Annotations[tc.targetAnnotationsKey],
-			tc.expectedAnnotationsValue, tc.name,
+		require.Equal(t, tc.expectedAnnotationsValue,
+			got.Items[0].ObjectMeta.Annotations[tc.targetAnnotationsKey], tc.name,
 		)
 	}
 }

@@ -65,8 +65,8 @@ func TestGetNamepsaces(t *testing.T) {
 			tc.expectedLabelValue, tc.name,
 		)
 
-		require.Equal(t, nsList[0].ObjectMeta.Annotations[tc.targetAnnotationsKey],
-			tc.expectedAnnotationsValue, tc.name,
+		require.Equal(t, tc.expectedAnnotationsValue,
+			nsList[0].ObjectMeta.Annotations[tc.targetAnnotationsKey], tc.name,
 		)
 	}
 }
