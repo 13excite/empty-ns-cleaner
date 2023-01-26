@@ -2,33 +2,36 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"flag"
+	"log"
+
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
 	"github.com/13excite/empty-ns-cleaner/pkg/controller"
 	"github.com/13excite/empty-ns-cleaner/pkg/kube"
-
 	//"github.com/13excite/empty-ns-cleaner/pkg/utils"
 	//"k8s.io/apimachinery/pkg/api/errors"
 	//	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 )
 
 func main() {
 
+	isOutsideCluster := flag.Bool("outside", true, "is service running outside of k8s")
+	flag.Parse()
+
 	config.C.Defaults()
 
-	fmt.Println("RUN")
-	clientset, err := kube.NewClientSet(true)
+	log.Println("RUN")
+	clientset, err := kube.NewClientSet(*isOutsideCluster)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	discClient, err := kube.NewDiscoveryClient(true)
+	discClient, err := kube.NewDiscoveryClient(*isOutsideCluster)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	dynClient, err := kube.NewDynamicClient(true)
+	dynClient, err := kube.NewDynamicClient(*isOutsideCluster)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
