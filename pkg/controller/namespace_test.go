@@ -40,7 +40,7 @@ func TestGetNamepsaces(t *testing.T) {
 							"label1": "value1",
 						},
 						Annotations: map[string]string{
-							"remove-empty-ns-operator/will-removed": "True",
+							CustomAnnotationName: "True",
 						},
 					},
 				},

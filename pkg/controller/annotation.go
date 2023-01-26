@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	CustomAnnotationName     = "remove-empty-ns-operator/will-removed"
 	AddRemoveAnnotationValue = "True"
 	DelRemoveAnnotationValue = "False"
 )
@@ -30,7 +31,8 @@ func (c *NSCleaner) AddWillRemoveAnnotation(name string) error {
 func (c *NSCleaner) patchWillRemovedAnnotations(name, annotationValue string) error {
 	// default annotation value
 	payload := fmt.Sprintf(
-		`{"metadata": {"annotations": {"remove-empty-ns-operator/will-removed": "%s"}}}`,
+		`{"metadata": {"annotations": {"%s": "%s"}}}`,
+		CustomAnnotationName,
 		annotationValue,
 	)
 	// use MergePatchType here, because

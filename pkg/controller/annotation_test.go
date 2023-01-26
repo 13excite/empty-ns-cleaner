@@ -23,7 +23,7 @@ func TestAddWillRemoveAnnotation(t *testing.T) {
 		{
 			name:                     "adding will-removed annotations for existing ns",
 			nsName:                   "my-namespace",
-			targetAnnotationsKey:     "remove-empty-ns-operator/will-removed",
+			targetAnnotationsKey:     CustomAnnotationName,
 			expectedAnnotationsValue: "True",
 			expectedError:            nil,
 			namespaces: []runtime.Object{
@@ -70,8 +70,8 @@ func TestDeleteRemoveAnnotation(t *testing.T) {
 	}{
 		{
 			name:                     "deleting will-removed annotations for existing ns",
-			nsName:                   "my-namespace1",
-			targetAnnotationsKey:     "remove-empty-ns-operator/will-removed",
+			nsName:                   "my-namespace",
+			targetAnnotationsKey:     CustomAnnotationName,
 			expectedAnnotationsValue: "False",
 			expectedError:            nil,
 			namespaces: []runtime.Object{
@@ -82,7 +82,7 @@ func TestDeleteRemoveAnnotation(t *testing.T) {
 							"label1": "value1",
 						},
 						Annotations: map[string]string{
-							"remove-empty-ns-operator/will-removed": "True",
+							CustomAnnotationName: "True",
 						},
 					},
 				},
