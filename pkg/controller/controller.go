@@ -32,7 +32,9 @@ type NSCleaner struct {
 }
 
 // TODO: pass args via config struct
-func NewNSCleaner(ctx context.Context, conf *config.Config,
+func NewNSCleaner(
+	ctx context.Context,
+	conf *config.Config,
 	clientSet *kubernetes.Clientset,
 	discoveryClient *discovery.DiscoveryClient,
 	dynamicClient *dynamic.DynamicClient,
@@ -92,18 +94,20 @@ func (c *NSCleaner) GetApiRecources() []schema.GroupVersionResource {
 	return resources
 }
 
+// TODO: move logic to separate func
 func (c *NSCleaner) Run(ctx context.Context) {
 	for {
-
 		namespaces, err := c.GetNamepsaces()
 		gvRecouceList := c.GetApiRecources()
-
 		if err != nil {
 			panic(err.Error())
 		}
 
 		for _, n := range namespaces.Items {
-			d := fmt.Sprintf("Found NS. Name: %s. Created: %v", n.Name, n.CreationTimestamp)
+			if c.config.DebugMode {
+				d := fmt.Sprintf("Found NS. Name: %s. Created: %v", n.Name, n.CreationTimestamp)
+				log.Printf(d)
+			}
 
 			if utils.IsContains(c.config.ProtectedNS, n.Name) {
 				if c.config.DebugMode {
@@ -112,26 +116,29 @@ func (c *NSCleaner) Run(ctx context.Context) {
 				continue
 			}
 
-			// DEBUG PRINT
+			shouldRemove := n.ObjectMeta.Annotations[CustomAnnotationName] == "True"
+
 			if c.isEmpty(n, gvRecouceList) {
-				log.Printf("NS IS EMPTY: %s", n.Name)
-			} else {
-				log.Printf("NS IS NOT EMPTY: %s", n.Name)
-			}
-			// TODO: mark only empty namespaces
-			// TODO: unmark annotations
-			// working with labels
-			// update labels
-			if n.ObjectMeta.Annotations["remove-empty-ns-operator/will-removed"] != "True" {
-				err := c.AddWillRemoveAnnotation(n.Name)
-				if err != nil {
-					log.Print(err)
+				// if ns is empty and has a deletion mark
+				if shouldRemove {
+					log.Printf("NS IS EMPTY AND HAS DELETION MARK: %s", n.Name)
+					log.Printf("DELETING!!!!\n")
+					// TODO: add a deletion method
+					// if ns is empty and doesn't have a deletion mark
+				} else {
+					log.Printf("NS IS EMPTY AND DOESNT HAVE DELETION MARK: %s", n.Name)
+					log.Printf("ADDDING DELETION MARK\n")
+					c.AddWillRemoveAnnotation(n.Name)
 				}
 			} else {
-				fmt.Printf("NS %s already marked as deleted\n", n.Name)
+				log.Printf("NS IS NOT EMPTY: %s", n.Name)
+				// if ns isn't empty and has a deletion mark
+				if shouldRemove {
+					log.Printf("NS IS EMPTY AND HAS DELETION MARK: %s", n.Name)
+					log.Printf("DELETING DELETION MARK")
+					c.DeleteWillRemoveAnnotation(n.Name)
+				}
 			}
-
-			log.Print(d)
 		}
 		time.Sleep(time.Duration(c.config.RunEveeryMins) * time.Minute)
 	}
