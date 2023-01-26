@@ -21,25 +21,13 @@ func main() {
 	config.C.Defaults()
 
 	log.Println("RUN")
-	clientset, err := kube.NewClientSet(*isOutsideCluster)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	discClient, err := kube.NewDiscoveryClient(*isOutsideCluster)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	dynClient, err := kube.NewDynamicClient(*isOutsideCluster)
+	kubeClients, err := kube.NewClients(*isOutsideCluster)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	ctx := context.Background()
-	kContrl := controller.NewNSCleaner(ctx, &config.C,
-		clientset, discClient, dynClient,
-	)
+	kContrl := controller.NewNSCleaner(ctx, &config.C, kubeClients)
 
 	kContrl.Run(ctx)
 

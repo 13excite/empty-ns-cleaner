@@ -6,6 +6,8 @@ import (
 
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // isIgnoredResouce returns true if object is
@@ -35,4 +37,11 @@ func isIgnoredResouce(obj unstructured.Unstructured, APIGroup string,
 		}
 	}
 	return false
+}
+
+func ignoreNotFound(err error) error {
+	if apierrs.IsNotFound(err) {
+		return nil
+	}
+	return err
 }

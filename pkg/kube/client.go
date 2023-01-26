@@ -6,30 +6,39 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// NewDiscoveryClient returns a client for
-// discover server-supported API groups, versions and resources
-func NewDiscoveryClient(outsideCluster bool) (*discovery.DiscoveryClient, error) {
-	config, err := newConfig(outsideCluster)
-	if err != nil {
-		return nil, err
-	}
-	return discovery.NewDiscoveryClientForConfig(config)
+// Clents contains 3 type of k8s clients
+// DiscoveryClient works with server-supported API groups, versions and resources
+// DynamicClient works with unstructured components
+// ClientSet works with structed components
+type Clients struct {
+	ClientSet       *kubernetes.Clientset
+	DiscoveryClient *discovery.DiscoveryClient
+	DynamicClient   *dynamic.DynamicClient
 }
 
-// NewDynamicClient returns a new dynamic client
-func NewDynamicClient(outsideCluster bool) (*dynamic.DynamicClient, error) {
+func NewClients(outsideCluster bool) (*Clients, error) {
 	config, err := newConfig(outsideCluster)
 	if err != nil {
-		return nil, err
+		return &Clients{}, err
 	}
-	return dynamic.NewForConfig(config)
-}
 
-// NewClientSet returns a Clientset which contains the clients for groups
-func NewClientSet(outsideCluster bool) (*kubernetes.Clientset, error) {
-	config, err := newConfig(outsideCluster)
+	dscvClient, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
-		return nil, err
+		return &Clients{}, err
 	}
-	return kubernetes.NewForConfig(config)
+
+	dynClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return &Clients{}, err
+	}
+	clientSet, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return &Clients{}, err
+	}
+
+	return &Clients{
+		DiscoveryClient: dscvClient,
+		DynamicClient:   dynClient,
+		ClientSet:       clientSet,
+	}, nil
 }
