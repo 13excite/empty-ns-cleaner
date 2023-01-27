@@ -37,61 +37,74 @@ func NewNSCleaner(
 	kubeCleints *kube.Clients,
 ) *NSCleaner {
 	return &NSCleaner{
+		ctx:             ctx,
 		clientSet:       kubeCleints.ClientSet,
 		discoveryClient: kubeCleints.DiscoveryClient,
 		dynamicClient:   kubeCleints.DynamicClient,
-		ctx:             ctx,
 		config:          conf,
 	}
 }
 
 // TODO: move logic to separate func
-func (c *NSCleaner) Run(ctx context.Context) {
+func (c *NSCleaner) Run() error {
+	ticker := time.NewTicker(time.Duration(c.config.RunEveeryMins) * time.Minute)
+
+	log.Printf("ns cleaner is starting....\n")
+
 	for {
-		namespaces, err := c.GetNamepsaces()
-		gvRecouceList := c.GetApiRecources()
-		if err != nil {
-			panic(err.Error())
+		select {
+		case <-ticker.C:
+			c.cleansingRunner()
+
+		case <-c.ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (c *NSCleaner) cleansingRunner() {
+	namespaces, err := c.GetNamepsaces()
+	gvRecouceList := c.GetApiRecources()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for _, n := range namespaces.Items {
+		if c.config.DebugMode {
+			d := fmt.Sprintf("Found NS. Name: %s. Created: %v", n.Name, n.CreationTimestamp)
+			log.Printf(d)
 		}
 
-		for _, n := range namespaces.Items {
+		if utils.IsContains(c.config.ProtectedNS, n.Name) {
 			if c.config.DebugMode {
-				d := fmt.Sprintf("Found NS. Name: %s. Created: %v", n.Name, n.CreationTimestamp)
-				log.Printf(d)
+				log.Printf("NS %s is prodtected. Skiping....\n", n.Name)
 			}
+			continue
+		}
 
-			if utils.IsContains(c.config.ProtectedNS, n.Name) {
-				if c.config.DebugMode {
-					log.Printf("NS %s is prodtected. Skiping....\n", n.Name)
-				}
-				continue
-			}
+		shouldRemove := n.ObjectMeta.Annotations[CustomAnnotationName] == "True"
 
-			shouldRemove := n.ObjectMeta.Annotations[CustomAnnotationName] == "True"
-
-			if c.isEmpty(n, gvRecouceList) {
-				// if ns is empty and has a deletion mark
-				if shouldRemove {
-					log.Printf("NS IS EMPTY AND HAS DELETION MARK: %s", n.Name)
-					log.Printf("DELETING!!!!\n")
-					// TODO: add a deletion method
-					// if ns is empty and doesn't have a deletion mark
-				} else {
-					log.Printf("NS IS EMPTY AND DOESNT HAVE DELETION MARK: %s", n.Name)
-					log.Printf("ADDDING DELETION MARK\n")
-					c.AddWillRemoveAnnotation(n.Name)
-				}
+		if c.isEmpty(n, gvRecouceList) {
+			// if ns is empty and has a deletion mark
+			if shouldRemove {
+				log.Printf("NS IS EMPTY AND HAS DELETION MARK: %s", n.Name)
+				log.Printf("DELETING!!!!\n")
+				// TODO: add a deletion method
+				// if ns is empty and doesn't have a deletion mark
 			} else {
-				log.Printf("NS IS NOT EMPTY: %s", n.Name)
-				// if ns isn't empty and has a deletion mark
-				if shouldRemove {
-					log.Printf("NS IS EMPTY AND HAS DELETION MARK: %s", n.Name)
-					log.Printf("DELETING DELETION MARK")
-					c.DeleteWillRemoveAnnotation(n.Name)
-				}
+				log.Printf("NS IS EMPTY AND DOESNT HAVE DELETION MARK: %s", n.Name)
+				log.Printf("ADDDING DELETION MARK\n")
+				c.AddWillRemoveAnnotation(n.Name)
+			}
+		} else {
+			log.Printf("NS IS NOT EMPTY: %s", n.Name)
+			// if ns isn't empty and has a deletion mark
+			if shouldRemove {
+				log.Printf("NS IS EMPTY AND HAS DELETION MARK: %s", n.Name)
+				log.Printf("DELETING DELETION MARK")
+				c.DeleteWillRemoveAnnotation(n.Name)
 			}
 		}
-		time.Sleep(time.Duration(c.config.RunEveeryMins) * time.Minute)
 	}
 }
 

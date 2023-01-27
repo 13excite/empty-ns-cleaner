@@ -5,12 +5,12 @@ import (
 	"flag"
 	"log"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
 	"github.com/13excite/empty-ns-cleaner/pkg/controller"
 	"github.com/13excite/empty-ns-cleaner/pkg/kube"
-	//"github.com/13excite/empty-ns-cleaner/pkg/utils"
-	//"k8s.io/apimachinery/pkg/api/errors"
-	//	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/13excite/empty-ns-cleaner/pkg/utils"
 )
 
 func main() {
@@ -20,15 +20,30 @@ func main() {
 
 	config.C.Defaults()
 
-	log.Println("RUN")
 	kubeClients, err := kube.NewClients(*isOutsideCluster)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	ctx := context.Background()
+	// TODO: TRY TO SPLIT IT
+	// SHOULD TO CREATE SEPARATE STRUCT SERVICE(or similar name) ????
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func(ctx context.Context, cancel context.CancelFunc) {
+		defer cancel()
+		utils.WaitForShutdown(ctx)
+	}(ctx, cancel)
+
+	group, ctx := errgroup.WithContext(ctx)
 	kContrl := controller.NewNSCleaner(ctx, &config.C, kubeClients)
 
-	kContrl.Run(ctx)
+	group.Go(func() error {
+		return kContrl.Run()
+	})
 
+	err = group.Wait()
+	if err != nil {
+		log.Panicf("service runs error")
+	}
 }
