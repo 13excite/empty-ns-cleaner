@@ -36,8 +36,15 @@ GVR_LOOP:
 	return true
 }
 
-func (c *NSCleaner) DeleteNamespace() {
-
+func (c *NSCleaner) DeleteNamespace(name string) {
+	propagation := metav1.DeletePropagationForeground
+	if err := c.clientSet.CoreV1().Namespaces().Delete(c.ctx, name, metav1.DeleteOptions{
+		PropagationPolicy: &propagation,
+	}); ignoreNotFound(err) != nil {
+		log.Printf("failed to delete ns '%s': %v", name, err)
+		return
+	}
+	// TODO: add metrics
 }
 
 func (c *NSCleaner) GetNamepsaces() (*v1.NamespaceList, error) {
