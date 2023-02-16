@@ -14,13 +14,13 @@ func InitLogger(c *Config) {
 
 	// Log Level
 	var logLevel zapcore.Level
-	if err := logLevel.Set(c.LogLevel); err != nil {
+	if err := logLevel.Set(c.Logger.Level); err != nil {
 		zap.S().Fatalw("could not determine logger.level", "error", err)
 	}
 	logConfig.Level.SetLevel(logLevel)
 
 	// Handle different logger encodings
-	loggerEncoding := c.LogEncoding
+	loggerEncoding := c.Logger.Encoding
 	switch loggerEncoding {
 	case "stackdriver":
 		logConfig.Encoding = "json"
@@ -28,10 +28,10 @@ func InitLogger(c *Config) {
 	default:
 		logConfig.Encoding = loggerEncoding
 		// Enable Color
-		if c.LoggerColor {
+		if c.Logger.Color {
 			logConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 		}
-		logConfig.DisableStacktrace = c.LoggerDisableStacktrace
+		logConfig.DisableStacktrace = c.Logger.DisableStacktrace
 		// Use sane timestamp when logging to console
 		if logConfig.Encoding == "console" {
 			logConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
@@ -44,7 +44,7 @@ func InitLogger(c *Config) {
 	}
 
 	// Settings
-	logConfig.DisableCaller = c.LoggerDisableCaller
+	logConfig.DisableCaller = c.Logger.DisableCaller
 
 	// Build the logger
 	globalLogger, _ := logConfig.Build()

@@ -2,10 +2,11 @@ package utils
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"go.uber.org/zap"
 )
 
 func WaitForShutdown(ctx context.Context) {
@@ -18,10 +19,10 @@ func WaitForShutdown(ctx context.Context) {
 		select {
 		case <-signalChannel:
 			// wait for system signal && initialize termination in that case
-			log.Printf("received interrupt...")
+			zap.S().Info("received interrupt...")
 			return
 		case <-ctx.Done():
-			log.Printf("shutting down by context...")
+			zap.S().Info("shutting down by context...")
 			return
 		}
 	}

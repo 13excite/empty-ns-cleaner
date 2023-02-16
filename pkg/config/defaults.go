@@ -38,11 +38,11 @@ func (c *Config) Defaults() {
 			APIGroup: "",
 		},
 	}
-	c.LogLevel = "debug"
-	c.LogEncoding = "console"
-	c.LoggerColor = true
-	c.LoggerDisableStacktrace = true
-	c.LoggerDisableCaller = false
+	c.Logger.Level = "debug"
+	c.Logger.Encoding = "console"
+	c.Logger.Color = true
+	c.Logger.DisableStacktrace = true
+	c.Logger.DisableCaller = false
 }
 
 func (c *Config) ReadConfig(configPath string) error {
