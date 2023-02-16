@@ -2,14 +2,13 @@ package controller
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"time"
 
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
 	"github.com/13excite/empty-ns-cleaner/pkg/kube"
 	"github.com/13excite/empty-ns-cleaner/pkg/utils"
 
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
@@ -19,6 +18,7 @@ import (
 
 type NSCleaner struct {
 	config *config.Config
+	logger *zap.SugaredLogger
 
 	clientSet       kubernetes.Interface
 	discoveryClient *discovery.DiscoveryClient
@@ -30,7 +30,6 @@ type NSCleaner struct {
 	stopCh <-chan struct{}
 }
 
-// TODO: pass args via config struct
 func NewNSCleaner(
 	ctx context.Context,
 	conf *config.Config,
@@ -42,19 +41,19 @@ func NewNSCleaner(
 		discoveryClient: kubeCleints.DiscoveryClient,
 		dynamicClient:   kubeCleints.DynamicClient,
 		config:          conf,
+		logger:          zap.S().With("package", "ns-cleaner"),
 	}
 }
 
 // TODO: move logic to separate func
 func (c *NSCleaner) Run() error {
 	ticker := time.NewTicker(time.Duration(c.config.RunEveeryMins) * time.Minute)
-
-	log.Printf("ns cleaner is starting....\n")
+	c.logger.Infow("ns cleaner is starting....")
 
 	for {
 		select {
 		case <-ticker.C:
-			c.cleansingRunner()
+			c.cleaningRunner()
 
 		case <-c.ctx.Done():
 			return nil
@@ -62,23 +61,18 @@ func (c *NSCleaner) Run() error {
 	}
 }
 
-func (c *NSCleaner) cleansingRunner() {
+func (c *NSCleaner) cleaningRunner() {
 	namespaces, err := c.GetNamepsaces()
-	gvRecouceList := c.GetApiRecources()
+	gvRecouceList := c.getApiRecources()
 	if err != nil {
 		panic(err.Error())
 	}
 
 	for _, n := range namespaces.Items {
-		if c.config.DebugMode {
-			d := fmt.Sprintf("Found NS. Name: %s. Created: %v", n.Name, n.CreationTimestamp)
-			log.Printf(d)
-		}
+		c.logger.Debugw("found NS", "name", n.Name, "created", n.CreationTimestamp)
 
 		if utils.IsContains(c.config.ProtectedNS, n.Name) {
-			if c.config.DebugMode {
-				log.Printf("NS %s is prodtected. Skiping....\n", n.Name)
-			}
+			c.logger.Debugw("protected ns was skipped ", "name", n.Name)
 			continue
 		}
 
@@ -87,33 +81,33 @@ func (c *NSCleaner) cleansingRunner() {
 		if c.isEmpty(n, gvRecouceList) {
 			// if ns is empty and has a deletion mark
 			if shouldRemove {
-				log.Printf("NS IS EMPTY AND HAS DELETION MARK: %s", n.Name)
-				log.Printf("DELETING!!!!\n")
-				// TODO: add a deletion method
+				c.logger.Infow("NS is empty and has deletion mark", "name", n.Name)
+				c.logger.Debugw("deleting ns", "name", n.Name)
+				c.DeleteNamespace(n.Name)
 				// if ns is empty and doesn't have a deletion mark
 			} else {
-				log.Printf("NS IS EMPTY AND DOESNT HAVE DELETION MARK: %s", n.Name)
-				log.Printf("ADDDING DELETION MARK\n")
+				c.logger.Infow("NS is empty and doesn't have deletion mark", "name", n.Name)
+				c.logger.Infow("adding deletion mark", "name", n.Name)
 				c.AddWillRemoveAnnotation(n.Name)
 			}
 		} else {
-			log.Printf("NS IS NOT EMPTY: %s", n.Name)
+			c.logger.Infow("NS is not empty", "name", n.Name)
 			// if ns isn't empty and has a deletion mark
 			if shouldRemove {
-				log.Printf("NS IS EMPTY AND HAS DELETION MARK: %s", n.Name)
-				log.Printf("DELETING DELETION MARK")
+				c.logger.Infow("NS is NOT empty and has deletion mark", "name", n.Name)
+				c.logger.Infow("deleting deletion mark", "name", n.Name)
 				c.DeleteWillRemoveAnnotation(n.Name)
 			}
 		}
 	}
 }
 
-func (c *NSCleaner) GetApiRecources() []schema.GroupVersionResource {
+func (c *NSCleaner) getApiRecources() []schema.GroupVersionResource {
 	// get resources list
 	lists, err := c.discoveryClient.ServerPreferredResources()
 	if err != nil {
 		// TODO: log or return
-		log.Printf(err.Error())
+		c.logger.Errorw("error of getting api recources", "error", err)
 	}
 	// result recources
 	resources := []schema.GroupVersionResource{}

@@ -8,6 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 
+	"go.uber.org/zap"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,6 +45,7 @@ func TestAddWillRemoveAnnotation(t *testing.T) {
 		fakeClientset := fake.NewSimpleClientset(tc.namespaces...)
 		ctrl := &NSCleaner{
 			clientSet: fakeClientset,
+			logger:    zap.S().With("package", "testing"),
 		}
 
 		err := ctrl.AddWillRemoveAnnotation(tc.nsName)
@@ -94,6 +97,7 @@ func TestDeleteRemoveAnnotation(t *testing.T) {
 		fakeClientset := fake.NewSimpleClientset(tc.namespaces...)
 		ctrl := &NSCleaner{
 			clientSet: fakeClientset,
+			logger:    zap.S().With("package", "ns-cleaner"),
 		}
 
 		err := ctrl.DeleteWillRemoveAnnotation(tc.nsName)

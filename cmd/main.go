@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
@@ -19,10 +19,13 @@ func main() {
 	flag.Parse()
 
 	config.C.Defaults()
+	config.InitLogger(&config.C)
+
+	logger := zap.S().With("package", "cmd")
 
 	kubeClients, err := kube.NewClients(*isOutsideCluster)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Fatalw(err.Error())
 	}
 
 	// TODO: TRY TO SPLIT IT
@@ -44,6 +47,6 @@ func main() {
 
 	err = group.Wait()
 	if err != nil {
-		log.Panicf("service runs error")
+		logger.Panicf("service runs error")
 	}
 }

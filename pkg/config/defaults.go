@@ -21,7 +21,6 @@ func (c *Config) Defaults() {
 		"kube-node-lease",
 	}
 	c.RunEveeryMins = 1
-	c.DebugMode = true
 	c.IgnoredResouces = []IgnoredResources{
 		{
 			NameMask: "kube-root-ca.crt",
@@ -39,6 +38,11 @@ func (c *Config) Defaults() {
 			APIGroup: "",
 		},
 	}
+	c.LogLevel = "debug"
+	c.LogEncoding = "console"
+	c.LoggerColor = true
+	c.LoggerDisableStacktrace = true
+	c.LoggerDisableCaller = false
 }
 
 func (c *Config) ReadConfig(configPath string) error {

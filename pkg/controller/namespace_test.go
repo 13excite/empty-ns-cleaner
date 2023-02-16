@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 
+	"go.uber.org/zap"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,6 +54,7 @@ func TestGetNamepsaces(t *testing.T) {
 		fakeClientset := fake.NewSimpleClientset(tc.namespaces...)
 		ctrl := &NSCleaner{
 			clientSet: fakeClientset,
+			logger:    zap.S().With("package", "testing"),
 		}
 
 		got, err := ctrl.GetNamepsaces()
@@ -109,6 +112,7 @@ func TestDeleteNamespace(t *testing.T) {
 		fakeClientset := fake.NewSimpleClientset(tc.namespaces...)
 		ctrl := &NSCleaner{
 			clientSet: fakeClientset,
+			logger:    zap.S().With("package", "testing"),
 		}
 
 		ctrl.DeleteNamespace(tc.deletingNsName)

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log"
 	"regexp"
 
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
@@ -12,8 +11,10 @@ import (
 
 // isIgnoredResouce returns true if object is
 // exist in config's IgnoredResources slice
-func isIgnoredResouce(obj unstructured.Unstructured, APIGroup string,
-	ignoredResources []config.IgnoredResources, debugMode bool) bool {
+func (c *NSCleaner) isIgnoredResouce(obj unstructured.Unstructured,
+	APIGroup string,
+	ignoredResources []config.IgnoredResources,
+) bool {
 	for _, ignoreResource := range ignoredResources {
 		// type casting a resource's name to string
 		objName := obj.Object["metadata"].(map[string]interface{})["name"].(string)
@@ -21,7 +22,7 @@ func isIgnoredResouce(obj unstructured.Unstructured, APIGroup string,
 		// if regexp match was failed,
 		// write log and return false
 		if err != nil {
-			log.Printf("couldn't match string with error: %v\n", err)
+			c.logger.Errorw("couldn't match string", "error", err)
 			return false
 		}
 		// if full match between a config and resource,
@@ -29,10 +30,7 @@ func isIgnoredResouce(obj unstructured.Unstructured, APIGroup string,
 		if matchIsIgnored &&
 			(ignoreResource.Kind == obj.Object["kind"]) &&
 			(ignoreResource.APIGroup == APIGroup) {
-			if debugMode {
-				log.Printf("IGNORRED RESOURCES FROM CONFIG. KIND:%s NAME: %s \n",
-					ignoreResource.Kind, objName)
-			}
+			c.logger.Infow("ignorred resource from config", "kind", ignoreResource.Kind, "name", objName)
 			return true
 		}
 	}

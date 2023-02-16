@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -42,7 +41,7 @@ func (c *NSCleaner) patchWillRemovedAnnotations(name, annotationValue string) er
 	)
 	// notFoundErr is ok
 	if ignoreNotFound(err) != nil {
-		log.Printf("unexpected error in running patch annotations\n")
+		c.logger.Errorw("unexpected error in running patch annotations", "error", err)
 		return err
 	}
 	return nil
