@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
@@ -9,6 +11,7 @@ import (
 	"github.com/13excite/empty-ns-cleaner/pkg/utils"
 
 	"go.uber.org/zap"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
@@ -18,6 +21,7 @@ import (
 
 type NSCleaner struct {
 	config *config.Config
+	// TODO: update logic for adding worker number to the logs
 	logger *zap.SugaredLogger
 
 	clientSet       kubernetes.Interface
@@ -67,38 +71,67 @@ func (c *NSCleaner) cleaningRunner() {
 	if err != nil {
 		panic(err.Error())
 	}
+	// all available CPUs
+	runtime.GOMAXPROCS(0)
+	wg := &sync.WaitGroup{}
+
+	workerInput := make(chan *v1.Namespace, 3)
+	defer close(workerInput)
+
+	for i := 0; i < 3; i++ {
+		go c.cleaningWorker(workerInput, wg, gvRecouceList, i)
+	}
 
 	for _, n := range namespaces.Items {
-		c.logger.Debugw("found NS", "name", n.Name, "created", n.CreationTimestamp)
+		wg.Add(1)
+		workerInput <- &n
+	}
+	wg.Wait()
+	// change logger pkg here
+	c.logger.Infow("FINISHED")
+}
+
+func (c *NSCleaner) cleaningWorker(
+	inNamespace <-chan *v1.Namespace,
+	wg *sync.WaitGroup,
+	gvRecouceList []schema.GroupVersionResource,
+	workerNum int,
+) {
+	for n := range inNamespace {
+		c.logger.Debugw("found NS", "name", n.Name, "created", n.CreationTimestamp, "worker", workerNum)
 
 		if utils.IsContains(c.config.ProtectedNS, n.Name) {
-			c.logger.Debugw("protected ns was skipped ", "name", n.Name)
+			c.logger.Debugw("protected ns was skipped ", "name", n.Name, "worker", workerNum)
+			// done wg here also
+			wg.Done()
 			continue
 		}
 
 		shouldRemove := n.ObjectMeta.Annotations[CustomAnnotationName] == "True"
 
-		if c.isEmpty(n, gvRecouceList) {
+		if c.isEmpty(*n, gvRecouceList) {
 			// if ns is empty and has a deletion mark
 			if shouldRemove {
-				c.logger.Infow("NS is empty and has deletion mark", "name", n.Name)
-				c.logger.Debugw("deleting ns", "name", n.Name)
+				c.logger.Infow("NS is empty and has deletion mark", "name", n.Name, "worker", workerNum)
+				c.logger.Debugw("deleting ns", "name", n.Name, "worker", workerNum)
 				c.DeleteNamespace(n.Name)
 				// if ns is empty and doesn't have a deletion mark
 			} else {
-				c.logger.Infow("NS is empty and doesn't have deletion mark", "name", n.Name)
-				c.logger.Infow("adding deletion mark", "name", n.Name)
+				c.logger.Infow("NS is empty and doesn't have deletion mark", "name", n.Name, "worker", workerNum)
+				c.logger.Infow("adding deletion mark", "name", n.Name, "worker", workerNum)
 				c.AddWillRemoveAnnotation(n.Name)
 			}
 		} else {
-			c.logger.Infow("NS is not empty", "name", n.Name)
+			c.logger.Infow("NS is not empty", "name", n.Name, "worker", workerNum)
 			// if ns isn't empty and has a deletion mark
 			if shouldRemove {
-				c.logger.Infow("NS is NOT empty and has deletion mark", "name", n.Name)
-				c.logger.Infow("deleting deletion mark", "name", n.Name)
+				c.logger.Infow("NS is NOT empty and has deletion mark", "name", n.Name, "worker", workerNum)
+				c.logger.Infow("deleting deletion mark", "name", n.Name, "worker", workerNum)
 				c.DeleteWillRemoveAnnotation(n.Name)
 			}
 		}
+		wg.Done()
+		runtime.Gosched()
 	}
 }
 

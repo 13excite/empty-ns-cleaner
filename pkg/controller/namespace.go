@@ -19,7 +19,7 @@ GVR_LOOP:
 		}
 	OBJECT_LOOP:
 		for _, obj := range objUnstruct.Items {
-			if c.isIgnoredResouce(obj, gvr.Group, c.config.IgnoredResouces) {
+			if isIgnoredResouce(obj, gvr.Group, c.config.IgnoredResouces) {
 				continue OBJECT_LOOP
 			}
 			c.logger.Debugw(

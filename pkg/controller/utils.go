@@ -32,7 +32,7 @@ func isIgnoredResouce(obj unstructured.Unstructured,
 		if matchIsIgnored &&
 			(ignoreResource.Kind == obj.Object["kind"]) &&
 			(ignoreResource.APIGroup == APIGroup) {
-			zap.S().Infow("ignorred resource from config", "kind", ignoreResource.Kind, "name", objName)
+			zap.S().Debugw("ignorred resource from config", "kind", ignoreResource.Kind, "name", objName)
 			return true
 		}
 	}
