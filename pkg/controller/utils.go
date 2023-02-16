@@ -4,6 +4,8 @@ import (
 	"regexp"
 
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
+
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -11,7 +13,7 @@ import (
 
 // isIgnoredResouce returns true if object is
 // exist in config's IgnoredResources slice
-func (c *NSCleaner) isIgnoredResouce(obj unstructured.Unstructured,
+func isIgnoredResouce(obj unstructured.Unstructured,
 	APIGroup string,
 	ignoredResources []config.IgnoredResources,
 ) bool {
@@ -22,7 +24,7 @@ func (c *NSCleaner) isIgnoredResouce(obj unstructured.Unstructured,
 		// if regexp match was failed,
 		// write log and return false
 		if err != nil {
-			c.logger.Errorw("couldn't match string", "error", err)
+			zap.S().Errorw("couldn't match string", "error", err)
 			return false
 		}
 		// if full match between a config and resource,
@@ -30,7 +32,7 @@ func (c *NSCleaner) isIgnoredResouce(obj unstructured.Unstructured,
 		if matchIsIgnored &&
 			(ignoreResource.Kind == obj.Object["kind"]) &&
 			(ignoreResource.APIGroup == APIGroup) {
-			c.logger.Infow("ignorred resource from config", "kind", ignoreResource.Kind, "name", objName)
+			zap.S().Infow("ignorred resource from config", "kind", ignoreResource.Kind, "name", objName)
 			return true
 		}
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/13excite/empty-ns-cleaner/pkg/config"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -98,11 +97,8 @@ func TestIsIgnoredResouce(t *testing.T) {
 			apiGroup: "apps/v1",
 		},
 	}
-	ctrl := &NSCleaner{
-		logger: zap.S().With("package", "testing"),
-	}
 	for _, tc := range testData {
-		got := ctrl.isIgnoredResouce(tc.object, tc.apiGroup, tc.ignoredResources)
+		got := isIgnoredResouce(tc.object, tc.apiGroup, tc.ignoredResources)
 		require.Equal(t, tc.want, got, tc.name)
 	}
 }
