@@ -6,7 +6,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (c *NSCleaner) isEmpty(ns v1.Namespace, gvrList []schema.GroupVersionResource) bool {
+func (c *NSCleaner) isEmpty(ns v1.Namespace,
+	gvrList []schema.GroupVersionResource,
+	workerLogValue string,
+) bool {
 GVR_LOOP:
 	for _, gvr := range gvrList {
 		objUnstruct, err := c.dynamicClient.Resource(gvr).Namespace(ns.Name).List(c.ctx, metav1.ListOptions{})
@@ -24,8 +27,10 @@ GVR_LOOP:
 			}
 			c.logger.Debugw(
 				"object exists in ns",
+				"namespace", ns.Name,
 				"kind", obj.Object["kind"],
 				"name", obj.Object["metadata"].(map[string]interface{})["name"],
+				"worker", workerLogValue,
 			)
 
 			return false

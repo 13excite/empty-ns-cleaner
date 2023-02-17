@@ -73,8 +73,8 @@ func (c *NSCleaner) cleaningRunner() {
 	}
 	// all available CPUs
 	runtime.GOMAXPROCS(0)
-	wg := &sync.WaitGroup{}
 
+	wg := &sync.WaitGroup{}
 	workerInput := make(chan *v1.Namespace, 3)
 	defer close(workerInput)
 
@@ -88,51 +88,7 @@ func (c *NSCleaner) cleaningRunner() {
 	}
 	wg.Wait()
 	// change logger pkg here
-	c.logger.Infow("FINISHED")
-}
-
-func (c *NSCleaner) cleaningWorker(
-	inNamespace <-chan *v1.Namespace,
-	wg *sync.WaitGroup,
-	gvRecouceList []schema.GroupVersionResource,
-	workerNum int,
-) {
-	for n := range inNamespace {
-		c.logger.Debugw("found NS", "name", n.Name, "created", n.CreationTimestamp, "worker", workerNum)
-
-		if utils.IsContains(c.config.ProtectedNS, n.Name) {
-			c.logger.Debugw("protected ns was skipped ", "name", n.Name, "worker", workerNum)
-			// done wg here also
-			wg.Done()
-			continue
-		}
-
-		shouldRemove := n.ObjectMeta.Annotations[CustomAnnotationName] == "True"
-
-		if c.isEmpty(*n, gvRecouceList) {
-			// if ns is empty and has a deletion mark
-			if shouldRemove {
-				c.logger.Infow("NS is empty and has deletion mark", "name", n.Name, "worker", workerNum)
-				c.logger.Debugw("deleting ns", "name", n.Name, "worker", workerNum)
-				c.DeleteNamespace(n.Name)
-				// if ns is empty and doesn't have a deletion mark
-			} else {
-				c.logger.Infow("NS is empty and doesn't have deletion mark", "name", n.Name, "worker", workerNum)
-				c.logger.Infow("adding deletion mark", "name", n.Name, "worker", workerNum)
-				c.AddWillRemoveAnnotation(n.Name)
-			}
-		} else {
-			c.logger.Infow("NS is not empty", "name", n.Name, "worker", workerNum)
-			// if ns isn't empty and has a deletion mark
-			if shouldRemove {
-				c.logger.Infow("NS is NOT empty and has deletion mark", "name", n.Name, "worker", workerNum)
-				c.logger.Infow("deleting deletion mark", "name", n.Name, "worker", workerNum)
-				c.DeleteWillRemoveAnnotation(n.Name)
-			}
-		}
-		wg.Done()
-		runtime.Gosched()
-	}
+	c.logger.Infow("all workers finished")
 }
 
 func (c *NSCleaner) getApiRecources() []schema.GroupVersionResource {
