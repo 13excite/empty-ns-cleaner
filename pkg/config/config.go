@@ -1,6 +1,7 @@
 package config
 
 type Config struct {
+	NumWorkers int `yaml:"num_workers"`
 	// TODO: add sort after the config init
 	ProtectedNS     []string           `yaml:"protected_ns"`
 	IgnoredResouces []IgnoredResources `yaml:"ignored_resources"`

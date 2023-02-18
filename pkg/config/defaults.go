@@ -13,6 +13,7 @@ var C = Config{}
 
 // Defaults returns config's object with default values
 func (c *Config) Defaults() {
+	c.NumWorkers = 3
 	c.ProtectedNS = []string{
 		"default",
 		"kube-public",

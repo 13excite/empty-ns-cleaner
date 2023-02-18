@@ -23,10 +23,6 @@ func (c *NSCleaner) cleaningWorker(
 		fields := []interface{}{
 			"namespace", n.Name, "worker", workerLogValue,
 		}
-
-		// fields := []zapcore.Field{
-		// 	zap.String("namespace", n.Name),
-		// }
 		c.logger.Debugw("found NS", fields...)
 
 		if utils.IsContains(c.config.ProtectedNS, n.Name) {
@@ -41,12 +37,12 @@ func (c *NSCleaner) cleaningWorker(
 		if c.isEmpty(*n, gvRecouceList, workerLogValue) {
 			// if ns is empty and has a deletion mark
 			if shouldRemove {
-				c.logger.Infow("NS is empty and has deletion mark", fields...)
-				c.logger.Debugw("deleting ns", fields...)
+				c.logger.Debugw("NS is empty and has deletion mark", fields...)
+				c.logger.Infow("deleting ns", fields...)
 				c.DeleteNamespace(n.Name)
 				// if ns is empty and doesn't have a deletion mark
 			} else {
-				c.logger.Infow("NS is empty and doesn't have deletion mark", fields...)
+				c.logger.Debugw("NS is empty and doesn't have deletion mark", fields...)
 				c.logger.Infow("adding deletion mark", fields...)
 				c.AddWillRemoveAnnotation(n.Name)
 			}
@@ -54,7 +50,7 @@ func (c *NSCleaner) cleaningWorker(
 			c.logger.Infow("NS is not empty", fields...)
 			// if ns isn't empty and has a deletion mark
 			if shouldRemove {
-				c.logger.Infow("NS is NOT empty and has deletion mark", fields...)
+				c.logger.Debugw("NS is NOT empty and has deletion mark", fields...)
 				c.logger.Infow("deleting deletion mark", fields...)
 				c.DeleteWillRemoveAnnotation(n.Name)
 			}

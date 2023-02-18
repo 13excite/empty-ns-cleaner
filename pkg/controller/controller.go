@@ -45,7 +45,8 @@ func NewNSCleaner(
 		discoveryClient: kubeCleints.DiscoveryClient,
 		dynamicClient:   kubeCleints.DynamicClient,
 		config:          conf,
-		logger:          zap.S().With("package", "ns-cleaner"),
+		// should to switch from sugar to a base logger?
+		logger: zap.S().With("package", "ns-cleaner"),
 	}
 }
 
@@ -58,8 +59,8 @@ func (c *NSCleaner) Run() error {
 		select {
 		case <-ticker.C:
 			c.cleaningRunner()
-
 		case <-c.ctx.Done():
+			ticker.Stop()
 			return nil
 		}
 	}
@@ -75,10 +76,10 @@ func (c *NSCleaner) cleaningRunner() {
 	runtime.GOMAXPROCS(0)
 
 	wg := &sync.WaitGroup{}
-	workerInput := make(chan *v1.Namespace, 3)
+	workerInput := make(chan *v1.Namespace, c.config.NumWorkers)
 	defer close(workerInput)
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < c.config.NumWorkers; i++ {
 		go c.cleaningWorker(workerInput, wg, gvRecouceList, i)
 	}
 
@@ -87,7 +88,6 @@ func (c *NSCleaner) cleaningRunner() {
 		workerInput <- &n
 	}
 	wg.Wait()
-	// change logger pkg here
 	c.logger.Infow("all workers finished")
 }
 
