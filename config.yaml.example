@@ -1,0 +1,28 @@
+---
+run_every_mins: 1
+
+# should be sorted
+protected_ns:
+  - "default"
+  - "kube-node-lease"
+  - "kube-public"
+  - "kube-system"
+  - "local-path-storage"
+
+ignored_resources:
+  - api_group: ""
+    kind: "ConfigMap"
+    name_mask: "kube-root-ca.crt"
+  - api_group: ""
+    kind: "Secret"
+    name_mask: 'default-token-\w+$'
+  - api_group: ""
+    kind: "ServiceAccount"
+    name_mask: '^default$'
+
+logger:
+  level: "debug"
+  encoding: "console"
+  color: True
+  disable_caller: False
+  disable_stacktrace: True
