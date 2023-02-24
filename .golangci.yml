@@ -6,6 +6,7 @@ linters:
   # also enable a couple more
   enable:
     - gofmt
+    - golint
     - revive
     - unconvert
     - exportloopref
