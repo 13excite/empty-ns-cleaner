@@ -6,6 +6,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// isEmpty checkes objects from the GV in a given namespaces
+// and takes into account the ignored resources
 func (c *NSCleaner) isEmpty(ns v1.Namespace,
 	gvrList []schema.GroupVersionResource,
 	workerLogValue string,
@@ -32,13 +34,13 @@ GVR_LOOP:
 				"name", obj.Object["metadata"].(map[string]interface{})["name"],
 				"worker", workerLogValue,
 			)
-
 			return false
 		}
 	}
 	return true
 }
 
+// DeleteNamespace deletes a namespace by name
 func (c *NSCleaner) DeleteNamespace(name string) {
 	propagation := metav1.DeletePropagationForeground
 	if err := c.clientSet.CoreV1().Namespaces().Delete(c.ctx, name, metav1.DeleteOptions{
@@ -50,6 +52,7 @@ func (c *NSCleaner) DeleteNamespace(name string) {
 	// TODO: add metrics
 }
 
+// GetNamepsaces returns a list of namespaces and an error
 func (c *NSCleaner) GetNamepsaces() (*v1.NamespaceList, error) {
 	nsList, err := c.clientSet.CoreV1().Namespaces().List(c.ctx, metav1.ListOptions{})
 	if err != nil {

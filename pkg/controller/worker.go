@@ -47,7 +47,7 @@ func (c *NSCleaner) cleaningWorker(
 				c.AddWillRemoveAnnotation(n.Name)
 			}
 		} else {
-			c.logger.Infow("NS is not empty", fields...)
+			c.logger.Debugw("NS is not empty", fields...)
 			// if ns isn't empty and has a deletion mark
 			if shouldRemove {
 				c.logger.Debugw("NS is NOT empty and has deletion mark", fields...)

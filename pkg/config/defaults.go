@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"sort"
+
+	"gopkg.in/yaml.v2"
 )
 
 const DefaultConfigPath = "/data/namespaces_cleaner.yaml"
@@ -16,10 +18,10 @@ func (c *Config) Defaults() {
 	c.NumWorkers = 3
 	c.ProtectedNS = []string{
 		"default",
+		"kube-node-lease",
 		"kube-public",
 		"kube-system",
 		"local-path-storage",
-		"kube-node-lease",
 	}
 	c.RunEveeryMins = 1
 	c.IgnoredResouces = []IgnoredResources{
@@ -58,6 +60,8 @@ func (c *Config) ReadConfig(configPath string) error {
 	if err != nil {
 		return fmt.Errorf("could not unmarshal config %v", c)
 	}
+	// Sort slice. Binary search is used on this slice
+	sort.Strings(c.ProtectedNS)
 	return nil
 
 }

@@ -39,6 +39,7 @@ func isIgnoredResouce(obj unstructured.Unstructured,
 	return false
 }
 
+// ignoreNotFound skips NotFoundError from k8s
 func ignoreNotFound(err error) error {
 	if apierrs.IsNotFound(err) {
 		return nil
