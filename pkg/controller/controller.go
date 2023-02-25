@@ -84,8 +84,9 @@ func (c *NSCleaner) cleaningRunner() {
 	}
 
 	for _, n := range namespaces.Items {
+		scopeNS := n
 		wg.Add(1)
-		workerInput <- &n
+		workerInput <- &scopeNS
 	}
 	wg.Wait()
 	c.logger.Infow("all workers finished")
