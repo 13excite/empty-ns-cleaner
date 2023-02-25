@@ -45,10 +45,10 @@ func main() {
 	}(ctx, cancel)
 
 	group, ctx := errgroup.WithContext(ctx)
-	kContrl := controller.NewNSCleaner(ctx, &config.C, kubeClients)
+	ctrl := controller.NewNSCleaner(ctx, &config.C, kubeClients)
 
 	group.Go(func() error {
-		return kContrl.Run()
+		return ctrl.Run()
 	})
 
 	err = group.Wait()

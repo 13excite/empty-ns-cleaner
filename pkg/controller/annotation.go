@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	// CustomAnnotationName is a default annotations name for this service
 	CustomAnnotationName     = "remove-empty-ns-operator/will-removed"
 	AddRemoveAnnotationValue = "True"
 	DelRemoveAnnotationValue = "False"
