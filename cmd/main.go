@@ -16,7 +16,7 @@ import (
 
 func main() {
 
-	isOutsideCluster := flag.Bool("outside", true, "is service running outside of k8s")
+	isOutsideCluster := flag.Bool("outside", false, "is service running outside of k8s")
 	configPath := flag.String("config", "", "path to config file")
 	flag.Parse()
 
