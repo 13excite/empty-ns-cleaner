@@ -26,6 +26,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v1
 
+      - name: Lint
+        run: make lint
+
       - name: Build binary
         run: |
           make build
