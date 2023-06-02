@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
+	//"k8s.io/client-go/tools/cache"
 )
 
 type NSCleaner struct {
@@ -27,11 +27,11 @@ type NSCleaner struct {
 	clientSet       kubernetes.Interface
 	discoveryClient *discovery.DiscoveryClient
 	dynamicClient   *dynamic.DynamicClient
-	nsInformer      cache.SharedIndexInformer // should i use cache for NS ?????
+	// nsInformer      cache.SharedIndexInformer // should i use cache for NS ?????
 
-	dryRun bool
-	ctx    context.Context
-	stopCh <-chan struct{}
+	// dryRun bool
+	ctx context.Context
+	// stopCh <-chan struct{}
 }
 
 func NewNSCleaner(
@@ -68,7 +68,7 @@ func (c *NSCleaner) Run() error {
 
 func (c *NSCleaner) cleaningRunner() {
 	namespaces, err := c.GetNamepsaces()
-	gvRecouceList := c.getApiRecources()
+	gvRecouceList := c.getAPIRecources()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -92,7 +92,7 @@ func (c *NSCleaner) cleaningRunner() {
 	c.logger.Infow("all workers finished")
 }
 
-func (c *NSCleaner) getApiRecources() []schema.GroupVersionResource {
+func (c *NSCleaner) getAPIRecources() []schema.GroupVersionResource {
 	// get resources list
 	lists, err := c.discoveryClient.ServerPreferredResources()
 	if err != nil {

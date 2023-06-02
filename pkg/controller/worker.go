@@ -44,7 +44,11 @@ func (c *NSCleaner) cleaningWorker(
 			} else {
 				c.logger.Debugw("NS is empty and doesn't have deletion mark", fields...)
 				c.logger.Infow("adding deletion mark", fields...)
-				c.AddWillRemoveAnnotation(n.Name)
+				err := c.AddWillRemoveAnnotation(n.Name)
+				if err != nil {
+					errMsgFields := append(fields, "error", err.Error())
+					c.logger.Errorw("annotation error", errMsgFields...)
+				}
 			}
 		} else {
 			c.logger.Debugw("NS is not empty", fields...)
@@ -52,7 +56,11 @@ func (c *NSCleaner) cleaningWorker(
 			if shouldRemove {
 				c.logger.Debugw("NS is NOT empty and has deletion mark", fields...)
 				c.logger.Infow("deleting deletion mark", fields...)
-				c.DeleteWillRemoveAnnotation(n.Name)
+				err := c.DeleteWillRemoveAnnotation(n.Name)
+				if err != nil {
+					errMsgFields := append(fields, "error", err.Error())
+					c.logger.Errorw("deletion error", errMsgFields...)
+				}
 			}
 		}
 		wg.Done()
