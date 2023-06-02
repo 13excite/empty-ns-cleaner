@@ -6,7 +6,7 @@ metadata:
   labels:
     application: ns-cleaner-operator
 spec:
-  serviceAccountName: ns-cleaner-operator
+  serviceAccountName: ns-cleaner-operator-sa
   containers:
   - name: nscleaner
     image: excite13/ns-cleaner:v2
