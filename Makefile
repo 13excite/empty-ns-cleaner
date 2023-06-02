@@ -9,6 +9,12 @@ BINARY_TAR_FILE	= $(BINARY_TAR_DIR).tar.gz
 BUILD_VERSION 	= $(shell cat VERSION.txt)
 BUILD_DATE 		= $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 
+
+# golangci-lint config
+golangci_lint_version=latest
+vols=-v `pwd`:/app -w /app
+run_lint=docker run --rm $(vols) golangci/golangci-lint:$(golangci_lint_version)
+
 # LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
 
 SRC = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
@@ -19,7 +25,8 @@ fmt:
 	@gofmt -l -w $(SRC)
 
 lint:
-	docker run --rm -v ${PWD}:/app -w /app golangci/golangci-lint:v1.43.0 golangci-lint run -v --timeout 5m
+	@printf "$(OK_COLOR)==> Running golang-ci-linter via Docker$(NO_COLOR)\n"
+	@$(run_lint) golangci-lint run --timeout=5m --verbose
 
 build:
 	@echo 'compiling binary...'
