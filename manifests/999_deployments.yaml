@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ns-cleaner
+  namespace: ns-cleaner-operator
+  labels:
+    application: ns-cleaner-operator
+spec:
+  selector:
+    matchLabels:
+      cleaner: ns-cleaner
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template: # => from here down copy and paste the pods metadata: and spec: sections
+    metadata:
+      labels:
+        application: ns-cleaner-operator
+        cleaner: ns-cleaner
+    spec:
+      serviceAccountName: ns-cleaner-operator-sa
+      containers:
+      - name: nscleaner
+        image: excite13/ns-cleaner:v2
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: 200Mi
+            cpu: 300m
+          requests:
+            memory: 100Mi
+            cpu: 100m
+      restartPolicy: Always
