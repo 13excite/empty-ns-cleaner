@@ -1,9 +1,19 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ns-cleaner-operator
+  name: ns-cleaner-operator-sa
+  namespace: ns-cleaner-operator
   labels:
     application: ns-cleaner-operator
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ns-cleaner-operator-token
+  namespace: ns-cleaner-operator
+  annotations:
+    kubernetes.io/service-account.name: ns-cleaner-operator-sa
+type: kubernetes.io/service-account-token
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -50,5 +60,5 @@ roleRef:
   name: ns-cleaner-operator
 subjects:
   - kind: ServiceAccount
-    name: ns-cleaner-operator
+    name: ns-cleaner-operator-sa
     namespace: ns-cleaner-operator
