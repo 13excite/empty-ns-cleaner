@@ -17,7 +17,7 @@ GVR_LOOP:
 		objUnstruct, err := c.dynamicClient.Resource(gvr).Namespace(ns.Name).List(c.ctx, metav1.ListOptions{})
 		if err != nil {
 			if ignoreNotFound(err) != nil {
-				c.logger.Errorw("unexpected error of dynamic client. GVP: %v", gvr)
+				c.logger.Errorw(`unexpected error of dynamic client.`, "GVR", gvr, "error", err.Error())
 				continue GVR_LOOP
 			}
 			continue GVR_LOOP
